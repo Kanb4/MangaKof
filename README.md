@@ -11,10 +11,91 @@ Um leitor de mangá TUI (interface de terminal) usando a API do MangaDex, escrit
 
 ## Instalação (Windows)
 
-```bash
-# Kof instalado em C:\kof\kof-0.2.6
-# MPV instalado em C:\Program Files\GoAnime\bin
+### 1. Instalar o Kof
+
+**Opção A — Instalador oficial (recomendado):**
+```powershell
+# Baixar o instalador do GitHub Releases:
+# https://github.com/KofLang/Kof4j/releases/latest
+# Extrair e rodar:
+kof install %USERPROFILE%\.kof
 ```
+Isso instala o Kof em `%USERPROFILE%\.kof` e adiciona ao PATH automaticamente.
+
+**Opção B — Scoop (gerenciador de pacotes):**
+```powershell
+scoop bucket add kof https://github.com/KofLang/scoop-bucket
+scoop install kof
+```
+
+**Opção C — Chocolatey:**
+```powershell
+choco install kof
+```
+
+**Verificar:**
+```powershell
+kof version
+# Deve mostrar algo como: kof 0.2.6
+```
+
+### 2. Instalar o MPV
+
+**Opção A — Scoop (recomendado):**
+```powershell
+scoop install mpv
+```
+
+**Opção B — Chocolatey:**
+```powershell
+choco install mpv
+```
+
+**Opção C — Instalador manual:**
+1. Baixar de https://mpv.io/installation/
+2. Instalar e **marcar "Add to PATH"**
+
+**Verificar:**
+```powershell
+mpv --version
+```
+
+### 3. Verificar curl
+
+Já incluso no Windows 10+:
+```powershell
+curl --version
+```
+
+### 4. Clonar e rodar o MangaKof
+
+```powershell
+git clone https://github.com/Kanb4/MangaKof.git
+cd MangaKof
+kof run src\main.kf
+```
+
+---
+
+### Verificação rápida (tudo junto)
+
+```powershell
+kof version && mpv --version && curl --version
+# Se os 3 mostrarem versão, está tudo pronto!
+```
+
+---
+
+### Dica: adicionar ao PATH permanentemente (se necessário)
+
+```powershell
+# Exemplo se instalou manualmente:
+$env:PATH += ";C:\kof\kof-0.2.6\bin;C:\Program Files\mpv"
+# Para permanente (requer admin):
+# [Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";C:\kof\kof-0.2.6\bin;C:\Program Files\mpv", "User")
+```
+
+---
 
 ## Instalação (Linux / macOS)
 
@@ -33,8 +114,8 @@ brew install mpv           # macOS
 ## Como Executar
 
 ```bash
-# Do diretório do projeto
-java -jar <caminho-do-kof>/lib/kof.jar run src/main.kf
+# Do diretório do projeto (requer kof no PATH)
+kof run src\main.kf
 ```
 
 ### Modo Teste (entrada em arquivo)
@@ -49,7 +130,7 @@ sair
 ```
 
 ```bash
-java -jar <caminho-do-kof>/lib/kof.jar run src/main.kf < input.txt
+kof run src\main.kf < input.txt
 ```
 
 ## Uso
