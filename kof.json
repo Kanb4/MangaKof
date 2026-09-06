@@ -1,0 +1,15 @@
+{
+  "name": "manga-tui",
+  "version": "0.1.0",
+  "description": "TUI Manga Reader using MangaDex API",
+  "targets": {
+    "jvm": true,
+    "native": true
+  },
+  "dependencies": [
+    "kof.web",
+    "kof.io",
+    "kof.config",
+    "kof.process"
+  ]
+}

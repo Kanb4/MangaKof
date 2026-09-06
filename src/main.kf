@@ -1,0 +1,334 @@
+main() {
+    println("__  __                         _  __      __ ")
+    println("|  \\/  | __ _ _ __   __ _  __ _| |/ /___  / _|")
+    println("| |\\/| |/ _` | '_ \\ / _` |/ _` | ' // _ \\| |_ ")
+    println("| |  | | (_| | | | | (_| | (_| | . \\ (_) | _|")
+    println("|_|  |_|\\__,_|_| |_|\\__, |\\__,_|_|\\_\\___/|_|  ")
+    println("                     |___/                    ")
+    println("=== MangaKof TUI ===")
+    println("Digite o nome do manga (ou 'sair' para sair):")
+    
+    while (true) {
+        var query = readLine()
+        if (query == null) break
+        if (query == "sair" || query == "exit") break
+        if (query.length() > 0) {
+            println("Buscando: " + query)
+            
+            var encoded = query.replace(" ", "%20")
+            var url = "https://api.mangadex.org/manga?limit=5&title=" + encoded
+            var response = http.get(url, "User-Agent: MangaKof-TUI/1.0")
+            
+            var pos = 0
+            var idx = 0
+            var mangaIds = listOf<String>()
+            
+            while (idx < 5) {
+                var titleKeyPos = response.indexOf("\"title\":{", pos)
+                if (titleKeyPos == -1) break
+                
+                var idStart = response.lastIndexOf("\"id\":\"", titleKeyPos)
+                if (idStart == -1) {
+                    pos = titleKeyPos + 9
+                    continue
+                }
+                
+                var idPos = idStart + 6
+                var idEnd = response.indexOf("\"", idPos)
+                var id = response.substring(idPos, idEnd)
+                
+                if (idEnd > titleKeyPos) {
+                    pos = titleKeyPos + 9
+                    continue
+                }
+                
+                var enTitlePos = response.indexOf("\"title\":{\"en\":\"", titleKeyPos)
+                var title = "Unknown"
+                if (enTitlePos == titleKeyPos) {
+                    var titlePos = enTitlePos + 15
+                    var titleEnd = response.indexOf("\"", titlePos)
+                    title = response.substring(titlePos, titleEnd)
+                } else {
+                    var titleSearchStart = titleKeyPos + 9
+                    var titleStart = response.indexOf("\"en\":\"", titleSearchStart)
+                    var searchBound = titleKeyPos + 2000
+                    if (titleStart != -1 && titleStart < searchBound) {
+                        var titlePos = titleStart + 6
+                        var titleEnd = response.indexOf("\"", titlePos)
+                        title = response.substring(titlePos, titleEnd)
+                    }
+                }
+                
+                var volStart = response.indexOf("\"lastVolume\":\"", titleKeyPos)
+                var vol = 0
+                var volStr = ""
+                if (volStart != -1 && volStart < titleKeyPos + 5000) {
+                    var volPos = volStart + 14
+                    var volEnd = response.indexOf("\"", volPos)
+                    volStr = response.substring(volPos, volEnd)
+                    if (volStr != "") {
+                        vol = volStr.toInt()
+                    }
+                }
+                
+                var statusStart = response.indexOf("\"status\":\"", titleKeyPos + 9)
+                var status = "unknown"
+                if (statusStart != -1 && statusStart < titleKeyPos + 20000) {
+                    var statusPos = statusStart + 10
+                    var statusEnd = response.indexOf("\"", statusPos)
+                    status = response.substring(statusPos, statusEnd)
+                }
+                
+                var langStart = response.indexOf("\"originalLanguage\":\"", titleKeyPos)
+                var lang = "unknown"
+                if (langStart != -1 && langStart < titleKeyPos + 20000) {
+                    var langPos = langStart + 20
+                    var langEnd = response.indexOf("\"", langPos)
+                    lang = response.substring(langPos, langEnd)
+                }
+                
+                pos = titleKeyPos + 9
+                
+                var volText = "TBA"
+                if (vol > 0) {
+                    volText = vol.toString()
+                }
+                
+                idx = idx + 1
+                mangaIds.add(id)
+                println("[" + idx + "] " + title + " | Volumes: " + volText + " | Status: " + status + " | Lang: " + lang)
+            }
+            
+            if (idx == 0) {
+                println("Nenhum manga encontrado!")
+                println("Digite outro manga ou 'sair':")
+                continue
+            }
+            
+            println("Digite o numero do manga para ver capitulos (ou 'sair'):")
+            var selection = readLine()
+            if (selection == null) break
+            if (selection == "sair" || selection == "exit") break
+            
+            var selIdx = 0
+            try { selIdx = selection.toInt() }
+            catch (String ex) { selIdx = 0 }
+            if (selIdx >= 1 && selIdx <= mangaIds.size()) {
+                var mangaId = mangaIds.get(selIdx - 1)
+                
+                println("Digite o idioma (en=ingles, pt-br=portugues, es=espanhol, etc.):")
+                var langInput = readLine()
+                if (langInput == null) {
+                    langInput = "en"
+                }
+                langInput = langInput.replace(" ", "")
+                if (langInput == "") {
+                    langInput = "en"
+                }
+                
+                fetchChapters(mangaId, langInput)
+            } else {
+                println("Selecao invalida!")
+                println("Digite outro manga ou 'sair':")
+            }
+        }
+    }
+}
+
+fetchChapters(String mangaId, String lang) {
+    println("Carregando capitulos (" + lang + ")...")
+    var url = "https://api.mangadex.org/manga/" + mangaId + "/feed?limit=20&translatedLanguage%5B%5D=" + lang + "&order%5Bvolume%5D=asc&order%5Bchapter%5D=asc"
+    var response = http.get(url, "User-Agent: MangaKof-TUI/1.0")
+    
+    var pos = 0
+    var idx = 0
+    var totalChapters = 0
+    
+    while (idx < 20) {
+        var chStart = response.indexOf("\"chapter\":\"", pos)
+        if (chStart == -1) break
+        
+        var chNumPos = chStart + 11
+        var chNumEnd = response.indexOf("\"", chNumPos)
+        var chNum = response.substring(chNumPos, chNumEnd)
+        
+        var volStart = response.indexOf("\"volume\":\"", chStart)
+        var vol = "?"
+        if (volStart != -1 && volStart < chStart + 200) {
+            var volPos = volStart + 10
+            var volEnd = response.indexOf("\"", volPos)
+            vol = response.substring(volPos, volEnd)
+            if (vol == "") {
+                vol = "?"
+            }
+        }
+        
+        var chTitleStart = response.indexOf("\"title\":\"", chNumEnd)
+        var chTitle = ""
+        if (chTitleStart != -1 && chTitleStart < chNumEnd + 300) {
+            var chTitlePos = chTitleStart + 9
+            var chTitleEnd = response.indexOf("\"", chTitlePos)
+            chTitle = response.substring(chTitlePos, chTitleEnd)
+        }
+        
+        var pagesStart = response.indexOf("\"pages\":", chNumEnd)
+        var pages = 0
+        if (pagesStart != -1 && pagesStart < chNumEnd + 200) {
+            var pagesPos = pagesStart + 8
+            var pagesEnd = response.indexOf(",", pagesPos)
+            if (pagesEnd == -1 || pagesEnd > pagesStart + 20) {
+                pagesEnd = response.indexOf("}", pagesPos)
+            }
+            var pagesStr = response.substring(pagesPos, pagesEnd)
+            try { pages = pagesStr.toInt() }
+            catch (String ex) { pages = 0 }
+        }
+        
+        pos = chNumEnd
+        
+        idx = idx + 1
+        totalChapters = idx
+        
+        var titleText = chTitle
+        if (titleText == "") {
+            titleText = "(sem titulo)"
+        }
+        
+        println("  [" + idx + "] Vol " + vol + " - Cap " + chNum + ": " + titleText + " (" + pages + " paginas)")
+    }
+    
+    if (totalChapters == 0) {
+        println("Nenhum capitulo encontrado nesse idioma (manga pode ser licenciado).")
+    } else {
+        println("\nTotal: " + totalChapters + " capitulos em " + lang)
+        println("Digite o numero do capitulo para baixar (ou 0 para voltar):")
+        var chSel = readLine()
+        if (chSel == null) {
+            println("Digite outro manga ou 'sair':")
+            return
+        }
+        var chSelNum = 0
+        try { chSelNum = chSel.toInt() }
+        catch (String ex) { chSelNum = 0 }
+        if (chSelNum >= 1 && chSelNum <= totalChapters) {
+            pos = 0
+            var count = 0
+            while (count < chSelNum) {
+                var chS = response.indexOf("\"chapter\":\"", pos)
+                if (chS == -1) break
+                pos = chS + 11
+                var chE = response.indexOf("\"", pos)
+                count = count + 1
+                if (count < chSelNum) {
+                    pos = chE
+                } else {
+                    var chNumStr = response.substring(pos, chE)
+                    var idSearchStart = response.lastIndexOf("\"id\":\"", chS)
+                    if (idSearchStart != -1) {
+                        var idPos = idSearchStart + 6
+                        var idEnd = response.indexOf("\"", idPos)
+                        var chapterId = response.substring(idPos, idEnd)
+                        downloadChapter(chapterId, chNumStr)
+                    }
+                }
+            }
+        }
+    }
+    
+    println("\nDigite outro manga ou 'sair':")
+}
+
+downloadChapter(String chapterId, String chNum) {
+    println("Baixando capitulo " + chNum + "...")
+    
+    var chapterDir = "manga_chap_" + chNum
+    Path(chapterDir).createDirectories()
+    var apiUrl = "https://api.mangadex.org/at-home/server/" + chapterId
+    var info = http.get(apiUrl, "User-Agent: MangaKof-TUI/1.0")
+    
+    var baseUrlStart = info.indexOf("\"baseUrl\":\"")
+    var baseUrl = ""
+    var hash = ""
+    var pageCount = 0
+    var imageList = listOf<String>()
+    
+    if (baseUrlStart != -1) {
+        var baseUrlPos = baseUrlStart + 11
+        var baseUrlEnd = info.indexOf("\"", baseUrlPos)
+        baseUrl = info.substring(baseUrlPos, baseUrlEnd).replace("\\/", "/")
+        
+        var hashStart = info.indexOf("\"hash\":\"")
+        if (hashStart != -1 && hashStart < baseUrlStart + 5000) {
+            var hashPos = hashStart + 8
+            var hashEnd = info.indexOf("\"", hashPos)
+            hash = info.substring(hashPos, hashEnd)
+        }
+        
+        var dataStart = info.indexOf("\"data\":[")
+        if (dataStart != -1) {
+            var dataEnd = info.indexOf("]", dataStart)
+            var dataPos = dataStart + 8
+            while (pageCount < 100) {
+                if (dataEnd != -1 && dataPos >= dataEnd) break
+                var fileNameStart = info.indexOf("\"", dataPos)
+                if (fileNameStart == -1) break
+                var fileNameEnd = info.indexOf("\"", fileNameStart + 1)
+                if (fileNameEnd == -1) break
+                var fileName = info.substring(fileNameStart + 1, fileNameEnd)
+                
+                if (fileName.indexOf(".png") != -1 || fileName.indexOf(".jpg") != -1) {
+                    pageCount = pageCount + 1
+                    
+                    var ext = "jpg"
+                    if (fileName.indexOf(".png") != -1) ext = "png"
+                    
+                    var paddedPage = "" + pageCount
+                    if (pageCount < 10) paddedPage = "0" + paddedPage
+                    var savePath = chapterDir + "/mangakof_p" + paddedPage + "." + ext
+                    
+                    var pageUrl = baseUrl + "/data/" + hash + "/" + fileName
+                    
+                    process.run("curl", "-s", "-L", "-m", "30",
+                        "-H", "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                        "-H", "Referer: https://mangadex.org/",
+                        "-H", "Accept: image/webp,image/apng,image/*,*/*;q=0.8",
+                        "-o", savePath, pageUrl)
+                    
+                    var check = readFile(savePath)
+                    var fileSize = Path(savePath).size()
+                    if (fileSize == 0 || (check != null && (check.indexOf("<html") != -1 || check.indexOf("<!doctype") != -1))) {
+                        if (check != null) {
+                            println("  ERRO: CDN retornou HTML em vez de imagem (" + fileName + ")")
+                        } else {
+                            println("  ERRO: Download falhou (" + fileName + ")")
+                        }
+                        pageCount = pageCount - 1
+                    } else {
+                        println("  Baixado pagina " + pageCount + "/" + fileName)
+                        imageList.add(savePath)
+                    }
+                    
+                    dataPos = fileNameEnd + 2
+                } else {
+                    dataPos = fileNameEnd + 1
+                }
+            }
+        }
+    }
+    
+    if (pageCount == 0) {
+        println("Erro ao baixar capitulo (manga bloqueado?).")
+    } else {
+        println("Download concluido: " + pageCount + " paginas.")
+        println("Abrindo no MPV...")
+        if (imageList.size() > 0) {
+            var playlistContent = "#EXTM3U\n"
+            for (var img in imageList) {
+                playlistContent = playlistContent + img + "\n"
+            }
+            var playlistPath = chapterDir + "/playlist.m3u"
+            writeFile(playlistPath, playlistContent)
+            process.run("mpv", "--loop-playlist=inf", playlistPath)
+        }
+    }
+}
