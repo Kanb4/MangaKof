@@ -189,35 +189,6 @@ O MPV abre todas as imagens da playlist com loop infinito, permitindo navegar en
 | Espaço | Pausar/despausar |
 | f | Alternar tela cheia |
 | q / ESC | Fechar MPV |
-
-## Limitações Conhecidas
-
-- **Bloqueio Cloudflare CDN**: O MangaDex CDN (`*.mangadex.network`) é protegido por Cloudflare e pode retornar páginas HTML em vez de imagens dependendo da região/IP. O app detecta isso e mostra `ERRO: CDN retornou HTML em vez de imagem`.
-- **Contorno Cloudflare**: O app inclui headers `Referer: https://mangadex.org/` e `Accept: image/webp,...` nos requests curl para reduzir desafios do Cloudflare, mas isso não é garantido em todas as regiões.
-- **Windows**: curl disponível via `C:\Windows\System32\curl.exe`
-- **Linux/macOS**: curl vem pré-instalado (instale via `apt`, `brew`, etc.)
-
-## Status
-
-- ✅ Busca de mangás via API MangaDex
-- ✅ Exibição de resultados (título, volumes, status, idioma)
-- ✅ Listagem de capítulos
-- ✅ Download de capítulos (imagens salvas como `mangakof_p*.jpg` em pastas separadas por capítulo)
-- ✅ Abertura no MPV com todas as imagens em playlist infinita
-- ✅ Banner ASCII "MangaKof"
-- ✅ Interativo (loop de busca contínua)
-- ✅ Validação de entrada (números inválidos não travam o programa)
-- ✅ Validação de download (detecta HTML do CDN/Cloudflare)
-- ✅ Correção de escape JSON `\/` da API MangaDex
-- ✅ Headers de contorno Cloudflare (Referer + Accept)
-- ✅ Pastas por capítulo (`manga_chap_<N>/`)
-
-## Dependências
-
-```json
-"kof.web", "kof.io", "kof.config", "kof.process"
-```
-
 ## Licença
 
 GPLv3
